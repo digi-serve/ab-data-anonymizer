@@ -5,7 +5,8 @@
   "description": "Export some tables with anonymized data",
   "exports": "./anonymize.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "anonymize": "node cli.js"
   },
   "author": "joshua@digiserve.org",
   "license": "ISC",

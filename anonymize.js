@@ -1,7 +1,10 @@
 /**
  * Anonymize AppBuilder data
  * 
- * node anonymize.js --limit=5000
+ * $ npm install digi-serve/ab-data-anonymizer
+ * 
+ * import anonymize from "ab-data-anonymizer"
+ * await anonymize(dbInfo, tables);
  */
 
 import crypto from "crypto";
@@ -10,21 +13,6 @@ import mysql from "promise-mysql";
 import randomName from "node-random-name";
 import ora from "ora";
 import { LoremIpsum } from "lorem-ipsum";
-
-import dbInfo from "./data/dbInfo.js";
-import tables from "./data/tables.js";
-
-var ROW_LIMIT;
-for (let arg of process.argv) {
-    let match = arg.match(/^--limit=(\d+)$/);
-    if (match) {
-        ROW_LIMIT = match[1];
-        console.log(`Limiting exported rows to ${ROW_LIMIT} per table`);
-    }
-}
-
-anonymize(dbInfo, tables);
-
 
 // Wrapper for child_process.exec()
 function exec(command) {
@@ -56,8 +44,11 @@ function exec(command) {
  * @param {object} tables
  *     Details of the tables to anonymize.
  *     See `./data/tables.js`.
+ * @param {integer} ROW_LIMIT
+ *     Can limit the max number of rows per table to export.
+ *     Default is 0, meaning no limit.
  */
-async function anonymize(dbInfo, tables) {
+export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
     const anonDbName = dbInfo.anonymousName;
     const dbName = dbInfo.name;
     const dbHost = dbInfo.host;

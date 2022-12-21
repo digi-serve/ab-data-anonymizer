@@ -19,7 +19,7 @@ Create `./data/dbInfo.js`.
       "user": "root",
       "password": "r00t",
       "host": "127.0.0.1",
-      "port": "3388",
+      "port": "3306",
       
       // This is the name of the source DB you want to export.
       "name": "appbuilder-admin",
@@ -84,7 +84,12 @@ anonymize(
       ],
       username: [
         // <Random first name>-<SHA-2 hash 5 chars>
-        { column: "COLUMN_F" }
+        { column: "COLUMN_F_a" },
+        { 
+          column: "COLUMN_F_b", 
+          // Skip special cases that should not be anonymized
+          skip: ["admin", "developer"]
+        }
       ],
       hash: [
         // SHA-2 hash
@@ -103,7 +108,9 @@ anonymize(
       ]
     },
 
-    AB_TABLE2: { ... },
+    AB_TABLE2: {
+      truncate: true // Delete all the rows from this table
+    },
 
     AB_TABLE3: { ... },
 

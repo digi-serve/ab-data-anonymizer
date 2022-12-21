@@ -238,6 +238,11 @@ export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
                     // Skip blank fields
                     if (!value) continue;
 
+                    // Skip special cases
+                    if (Array.isArray(field.skip)) {
+                        if (field.skip.includes(value)) continue;
+                    }
+
                     switch (fieldType) {
                         default:
                             if (!warnings.has(fieldType)) {

@@ -163,8 +163,8 @@ export default {
 
     SITE_USER: {
         username: [
-            { column: "username" },
-            { column: "authname" },
+            { column: "username", skip: ["admin"] },
+            { column: "authname", skip: ["admin"] },
         ],
         email: [
             { column: "email" },

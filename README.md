@@ -1,5 +1,9 @@
 Export data from an AppBuilder DB and anonymize it
 
+# Requirements
+
+`mysql` and `mysqldump` should be accessible from the command line.
+
 # Install
 ```sh
 npm install digi-serve/ab-data-anonymizer

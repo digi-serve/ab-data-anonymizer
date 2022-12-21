@@ -14,6 +14,7 @@ import randomName from "node-random-name";
 import ora from "ora";
 import { LoremIpsum } from "lorem-ipsum";
 
+
 // Wrapper for child_process.exec()
 function exec(command) {
     return new Promise((resolve, reject) => {
@@ -73,6 +74,7 @@ export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
     spinner = ora(`Cloning DB structure to ${anonDbName}`).start();
     await exec(
         `mysqldump -u"${dbUser}" -h"${dbHost}" -P${dbPort} --no-data "${dbName}"`
+        + ` --column-statistics=0`
         + ` SITE_PROCESS_INSTANCE SITE_PROCESS_INSTANCE_temp SITE_ROWLOG`
         + ` | mysql -u"${dbUser}" -h"${dbHost}" -P${dbPort} "${anonDbName}"`
     );
@@ -89,6 +91,7 @@ export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
         + ` --ignore-table "${dbName}.SITE_PROCESS_INSTANCE"`
         + ` --ignore-table "${dbName}.SITE_PROCESS_INSTANCE_temp"`
         + ` --ignore-table "${dbName}.SITE_ROWLOG"`
+        + ` --column-statistics=0`
         + ` "${dbName}"`
         + rowLimit
         + ` | mysql -u"${dbUser}" -h"${dbHost}" -P${dbPort} "${anonDbName}"`

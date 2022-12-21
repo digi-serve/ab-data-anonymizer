@@ -49,6 +49,11 @@ All foreign keys will be set to `ON DELETE SET NULL ON UPDATE CASCADE` in the ex
 
 All columns that refer to other tables should be defined with foreign key constraints. If not, the anonymizer script has no way of knowing what columns they are referring to, and referential integrity will be lost after anonymizing.
 
+The following tables will always be exported with no data (i.e. truncated):
+- `SITE_ROWLOG`
+- `SITE_PROCESS_INSTANCE`
+- `SITE_PROCESS_INSTANCE_temp`
+
 # API Usage
 
 ```js
@@ -72,7 +77,7 @@ anonymize(
         { column: "COLUMN_B", length: "sentence" }
       ],
       email: [
-        // <SHA-2 hash 10 chars>@example.com
+        // <SHA2 hash 10 chars>@example.com
         { column: "COLUMN_C" }
       ],
       numbers: [
@@ -83,7 +88,7 @@ anonymize(
         { column: "COLUMN_E" }
       ],
       username: [
-        // <Random first name>-<SHA-2 hash 5 chars>
+        // <Random first name>-<SHA2 hash 5 chars>
         { column: "COLUMN_F_a" },
         { 
           column: "COLUMN_F_b", 
@@ -92,7 +97,7 @@ anonymize(
         }
       ],
       hash: [
-        // SHA-2 hash
+        // SHA2 hash
         { column: "COLUMN_G", length: 7 /* number of chars */ }
       ],
       name: [

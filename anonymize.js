@@ -325,6 +325,10 @@ export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
                                 console.error(err);
                             }
                             break;
+
+                        case "uuid":
+                            value = crypto.randomUUID();
+                            break;
                     }
 
                     row[columnName] = value;

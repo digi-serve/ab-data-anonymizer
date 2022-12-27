@@ -110,6 +110,10 @@ anonymize(
         { column: "COLUMN_K", property: "Description", length: 5 /* number of words */ },
         // [ { language_code: "en", Explanation: "THIS WILL BE ANONYMIZED" }, ... ]
         { column: "COLUMN_L", property: "Explanation", length: "sentence" },
+      ],
+      uuid: [
+        // Random UUID
+        { column: "COLUMN_M" }
       ]
     },
 

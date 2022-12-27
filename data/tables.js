@@ -297,6 +297,9 @@ export default {
     AB_Projectw: {
         json: [
             { column: "translations", property: "Purpose", length: "sentence" },
+            { column: "translations", property: "Note", length: "sentence" },
+            { column: "translations", property: "Location", length: 2 },
+            { column: "translations", property: "Project Name", length: 4 },
         ],
         text: [
             { column: "Date", length: 2 },

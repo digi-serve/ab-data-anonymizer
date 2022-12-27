@@ -14,19 +14,24 @@ npm install digi-serve/ab-data-anonymizer
 ## Config
 Create `./data/dbInfo.js`.
 ```js
+  // Database credentials.
   export default {
-      // Database credentials.
-      "user": "root",
-      "password": "r00t",
-      "host": "127.0.0.1",
-      "port": "3306",
-      
-      // This is the name of the source DB you want to export.
-      "name": "appbuilder-admin",
-      
-      // This is the name of the target DB you are exporting to. 
-      // It does not need to exist yet.
-      "anonymousName": "appbuilder-anonymous"
+      "source": {
+        "user": "root",
+        "password": "r00t",
+        "host": "127.0.0.1",
+        "port": "3306",
+        "name": "appbuilder-admin",
+      },
+      "target": {
+        "user": "root",
+        "password": "r00t",
+        "host": "192.168.1.1",
+        "port": "3388",
+        // This is the name of the target DB you are exporting to. 
+        // It does not need to exist yet.
+        "name": "appbuilder-anonymous",
+      }
   }
 ```
 
@@ -62,12 +67,19 @@ import anonymize from "ab-data-anonymizer"
 
 anonymize(
   {
-    user: "root",
-    password: "r00t",
-    host: "127.0.0.1",
-    port: "3306",
-    name: "appbuilder-admin",
-    anonymousName: "appbuilder-anonymous"
+    source: {
+      user: "root",
+      password: "r00t",
+      host: "127.0.0.1",
+      port: "3306",
+      name: "appbuilder-admin",
+    },
+    target: {
+      user: "root",
+      password: "r00t",
+      host: "192.168.1.1",
+      port: "3388",
+      name: "appbuilder-anonymous",
   },
   {
     AB_TABLE1: {

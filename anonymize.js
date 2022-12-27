@@ -20,7 +20,12 @@ function exec(command) {
     return new Promise((resolve, reject) => {
         child_process.exec(command, (err, stdout, stderr) => {
             if (stdout) console.log(stdout);
-            if (stderr) console.error(stderr);
+            if (stderr) {
+                // Suppress this one specific warning message.
+                if (!stderr.match(/Using a password on the command line interface can be insecure.\s*$/)) {
+                    console.error(stderr);
+                }
+            }
             if (err) {
                 reject(err);
             }
@@ -34,13 +39,21 @@ function exec(command) {
 
 /**
  * @param {object} dbInfo
- *     { 
- *         host, 
- *         port, 
- *         user, 
- *         password, 
- *         name,
- *         anonymousName
+ *     {
+ *         source: {
+ *             host: <string>, 
+ *             port: <integer>, 
+ *             user: <string>, 
+ *             password: <string>, 
+ *             name: <string>,
+ *         },
+ *         source: {
+ *             host: <string>, 
+ *             port: <integer>, 
+ *             user: <string>, 
+ *             password: <string>, 
+ *             name: <string>,
+ *         }
  *     }
  * @param {object} tables
  *     Details of the tables to anonymize.
@@ -50,53 +63,63 @@ function exec(command) {
  *     Default is 0, meaning no limit.
  */
 export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
-    const anonDbName = dbInfo.anonymousName;
-    const dbName = dbInfo.name;
-    const dbHost = dbInfo.host;
-    const dbUser = dbInfo.user;
-    const dbPassword = dbInfo.password;
-    const dbPort = dbInfo.port;
+    const sourceDbName = dbInfo.source.name;
+    const sourceDbHost = dbInfo.source.host;
+    const sourceDbUser = dbInfo.source.user;
+    const sourceDbPassword = dbInfo.source.password;
+    const sourceDbPort = dbInfo.source.port;
+
+    const targetDbName = dbInfo.target.name;
+    const targetDbHost = dbInfo.target.host;
+    const targetDbUser = dbInfo.target.user;
+    const targetDbPassword = dbInfo.target.password;
+    const targetDbPort = dbInfo.target.port;
 
     const lorem = new LoremIpsum();
     const db = await mysql.createConnection({
-        host: dbHost,
-        port: dbPort,
-        user: dbUser,
-        password: dbPassword
+        host: targetDbHost,
+        port: targetDbPort,
+        user: targetDbUser,
+        password: targetDbPassword
     });
     let spinner;
-    process.env.MYSQL_PWD = dbPassword;
+
+    // Source DB password will be passed to mysqldump using the "-p" option.
+    // Target DB password will be passed to mysql using environment variable.
+    process.env.MYSQL_PWD = targetDbPassword;
 
     // Create anon DB
-    await db.query(`CREATE DATABASE IF NOT EXISTS ??`, [anonDbName]);
+    await db.query(`CREATE DATABASE IF NOT EXISTS ??`, [targetDbName]);
 
     // Clone DB structure
-    spinner = ora(`Cloning DB structure to ${anonDbName}`).start();
+    spinner = ora(`Cloning DB structure to ${targetDbName}`).start();
     await exec(
-        `mysqldump -u"${dbUser}" -h"${dbHost}" -P${dbPort} --no-data "${dbName}"`
-        + ` --column-statistics=0`
+        `mysqldump -u"${sourceDbUser}" -h"${sourceDbHost}" -P${sourceDbPort}`
+        + ` -p"${sourceDbPassword}"`
+        + ` --column-statistics=0 --no-data "${sourceDbName}"`
         + ` SITE_PROCESS_INSTANCE SITE_PROCESS_INSTANCE_temp SITE_ROWLOG`
-        + ` | mysql -u"${dbUser}" -h"${dbHost}" -P${dbPort} "${anonDbName}"`
+        + ` | mysql -u"${targetDbUser}" -h"${targetDbHost}" -P${targetDbPort} "${targetDbName}"`
     );
     spinner.succeed();
 
     // Clone data (excluding gigantic tables)
-    spinner = ora(`Cloning data from ${dbName} to ${anonDbName}`).start();
+    spinner = ora(`Cloning data from ${sourceDbName} to ${targetDbName}`).start();
     let rowLimit = "";
     if (ROW_LIMIT > 0 && ROW_LIMIT < Infinity) {
         rowLimit = ` --where="1 LIMIT ${ROW_LIMIT}"`;
     }
     await exec(
-        `mysqldump -u"${dbUser}" -h"${dbHost}" -P${dbPort}`
-        + ` --ignore-table "${dbName}.SITE_PROCESS_INSTANCE"`
-        + ` --ignore-table "${dbName}.SITE_PROCESS_INSTANCE_temp"`
-        + ` --ignore-table "${dbName}.SITE_ROWLOG"`
+        `mysqldump -u"${sourceDbUser}" -h"${sourceDbHost}" -P${sourceDbPort}`
+        + ` -p"${sourceDbPassword}"`
+        + ` --ignore-table "${sourceDbName}.SITE_PROCESS_INSTANCE"`
+        + ` --ignore-table "${sourceDbName}.SITE_PROCESS_INSTANCE_temp"`
+        + ` --ignore-table "${sourceDbName}.SITE_ROWLOG"`
         + ` --column-statistics=0`
-        + ` "${dbName}"`
+        + ` "${sourceDbName}"`
         + rowLimit
-        + ` | mysql -u"${dbUser}" -h"${dbHost}" -P${dbPort} "${anonDbName}"`
+        + ` | mysql -u"${targetDbUser}" -h"${targetDbHost}" -P${targetDbPort} "${targetDbName}"`
     );
-    await db.query(`USE ??`, [anonDbName]);
+    await db.query(`USE ??`, [targetDbName]);
     spinner.succeed();
 
 
@@ -104,10 +127,8 @@ export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
 
     for (let tableName in tables) {
         let tableDetails = tables[tableName];
-        spinner = ora({ text: `${tableName}`, indent: 2 }).start();
-
-        // Check columns
         let columnNames = [];
+        spinner = ora({ text: `${tableName}`, indent: 2 }).start();
 
         if (tableDetails.truncate === true) {
             await db.query(
@@ -145,7 +166,7 @@ export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
                             AND r.UPDATE_RULE != 'CASCADE'
                         ORDER BY k.TABLE_NAME
                     `,
-                    [ anonDbName, tableName, columnName ]
+                    [ targetDbName, tableName, columnName ]
                 );
                 for (let result of foreignKeyResults) {
                     // Nullify invalid foreign key references
@@ -377,7 +398,7 @@ export default async function anonymize(dbInfo, tables, ROW_LIMIT=0) {
     for (let tableName in tables) {
         let triggers = await db.query(
             `SHOW TRIGGERS FROM ?? WHERE ?? = ?`,
-            [ anonDbName, "Table", tableName ]
+            [ targetDbName, "Table", tableName ]
         );
         if (triggers.length > 0) {
             spinner = ora({ text: `${tableName}`, indent: 2 }).start();
